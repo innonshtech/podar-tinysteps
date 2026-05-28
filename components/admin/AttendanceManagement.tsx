@@ -343,6 +343,12 @@ export default function AttendanceManagement() {
     return name.includes(query) || adm.includes(query);
   });
 
+  const displayPresent = viewMode === "mark" ? currentRegisterStats.present : stats.present;
+  const displayAbsent = viewMode === "mark" ? currentRegisterStats.absent : stats.absent;
+  const displayRate = viewMode === "mark" 
+    ? (currentRegisterStats.total > 0 ? Math.round((currentRegisterStats.present / currentRegisterStats.total) * 100) : 0)
+    : stats.rate;
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
       {/* Scrollable outer wrapper */}
@@ -365,7 +371,7 @@ export default function AttendanceManagement() {
                   <UserCheck className="w-5 h-5 text-emerald-600" />
                 </div>
               </div>
-              <p className="text-3xl font-extrabold text-emerald-900">{stats.present}</p>
+              <p className="text-3xl font-extrabold text-emerald-900">{displayPresent}</p>
             </div>
 
             <div className="bg-pink-50 p-5 rounded-2xl border border-pink-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
@@ -375,7 +381,7 @@ export default function AttendanceManagement() {
                   <UserX className="w-5 h-5 text-pink-600" />
                 </div>
               </div>
-              <p className="text-3xl font-extrabold text-pink-900">{stats.absent}</p>
+              <p className="text-3xl font-extrabold text-pink-900">{displayAbsent}</p>
             </div>
 
             <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
@@ -385,7 +391,7 @@ export default function AttendanceManagement() {
                   <ClipboardCheck className="w-5 h-5 text-blue-600" />
                 </div>
               </div>
-              <p className="text-3xl font-extrabold text-blue-900">{stats.rate}%</p>
+              <p className="text-3xl font-extrabold text-blue-900">{displayRate}%</p>
             </div>
           </div>
 

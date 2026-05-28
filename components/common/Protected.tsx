@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { canAccess } from "@/utils/permissions";
 
+import { isModuleEnabled } from "@/utils/featureFlags";
+
 export default function Protected({
   children,
   module,
@@ -21,10 +23,10 @@ export default function Protected({
       return;
     }
 
-    if (!canAccess(user.role, module)) {
+    if (!canAccess(user.role, module) || !isModuleEnabled(module)) {
       router.push("/unauthorized");
     }
-  }, [user]);
+  }, [user, module, router]);
 
   return <>{children}</>;
 }

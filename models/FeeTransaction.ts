@@ -1,25 +1,46 @@
 import mongoose from "mongoose";
 
-const FeeTransactionSchema = new mongoose.Schema({
-  studentId: { type: mongoose.Schema.Types.ObjectId, ref: "Student", required: true },
-  parentId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // optional
-  structureId: { type: mongoose.Schema.Types.ObjectId, ref: "FeeStructure" },
-  items: [
-    {
-      head: String,
-      amount: Number,
-    }
-  ],
-  amountDue: { type: Number, required: true },
-  amountPaid: { type: Number, default: 0 },
-  fineAmount: { type: Number, default: 0 },
-  status: { type: String, enum: ["due", "partial", "paid"], default: "due" },
-  dueDate: Date,
-  paymentMethod: { type: String, enum: ["cash", "razorpay", "online", "offline"], default: "cash" },
-  paymentMeta: mongoose.Schema.Types.Mixed, // store Razorpay order/payment info
-  receipts: [{ url: String, createdAt: Date }],
-  note: String,
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" } // who collected
-}, { timestamps: true });
+const FeeTransactionSchema = new mongoose.Schema(
+  {
+    studentFeeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StudentFee",
+      required: true,
+    },
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+      required: true,
+    },
+    amount: {
+      type: Number,
+      required: true,
+    },
+    paymentMethod: {
+      type: String, // e.g., "Cash", "UPI", "Net Banking", "Card"
+      required: true,
+    },
+    transactionDate: {
+      type: Date,
+      default: Date.now,
+    },
+    referenceNumber: {
+      type: String, // For UPI/Bank transaction IDs
+    },
+    status: {
+      type: String,
+      enum: ["Success", "Pending", "Failed"],
+      default: "Success",
+    },
+    recordedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // The teacher or admin who recorded the payment
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
 
-export default mongoose.models.FeeTransaction || mongoose.model("FeeTransaction", FeeTransactionSchema);
+const FeeTransaction = mongoose.models.FeeTransaction || mongoose.model("FeeTransaction", FeeTransactionSchema);
+
+export default FeeTransaction;

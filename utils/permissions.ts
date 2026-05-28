@@ -9,13 +9,15 @@ export const PERMISSIONS: any = {
     "timetable",
     "exams",
     "notifications",
+    "communications",
     "events",
     "transport",
     "meal-plan",
     "gallery",
     "settings",
     "log-activity",
-    "leaves"
+    "leaves",
+    "enquiries"
   ],
 
   teacher: [
@@ -24,8 +26,11 @@ export const PERMISSIONS: any = {
     "timetable",
     "exams",
     "notifications",
+    "communications",
     "events",
-    "leaves"
+    "leaves",
+    "enquiries",
+    "fees"
   ],
 
   parent: [
@@ -33,7 +38,9 @@ export const PERMISSIONS: any = {
     "parent-portal",
     "gallery",
     "meal-plan",
-    "notifications"
+    "notifications",
+    "communications",
+    "fees"
   ]
 };
 

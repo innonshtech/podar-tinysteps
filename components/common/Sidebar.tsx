@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { PERMISSIONS } from "@/utils/permissions";
+import { isModuleEnabled } from "@/utils/featureFlags";
 import { useState, ComponentType } from "react";
 import {
   LayoutDashboard,
@@ -24,6 +25,8 @@ import {
   PanelLeftClose,
   PanelLeft,
   Clock,
+  Mail,
+  Headset,
 } from "lucide-react";
 
 interface User {
@@ -36,7 +39,7 @@ interface MenuItem {
   path: string;
   module: string;
   icon: ComponentType<{ className?: string }>;
-  color: "orange" | "pink" | "rose" | "purple" | "amber" | "green" | "fuchsia" | "indigo" | "red" | "yellow" | "cyan" | "violet" | "slate";
+  color: "orange" | "pink" | "rose" | "purple" | "amber" | "green" | "fuchsia" | "indigo" | "red" | "yellow" | "cyan" | "violet" | "slate" | "blue";
 }
 
 export default function Sidebar({
@@ -131,16 +134,20 @@ export default function Sidebar({
       icon: Clock,
       color: "red",
     },
-    /* Previously Notifications. Kept as comment so original implementation remains available */
-    /*
     {
-      name: "Notifications",
-      path: `${basePath}/notifications`,
-      module: "notifications",
-      icon: Bell,
+      name: "Enquiries",
+      path: `${basePath}/enquiries`,
+      module: "enquiries",
+      icon: Headset,
+      color: "blue", // Will add 'blue' to types
+    },
+    {
+      name: "Communications",
+      path: `${basePath}/communications`,
+      module: "communications",
+      icon: Mail,
       color: "red",
     },
-    */
     /* Log Activity hidden for small school client 
     {
       name: "Log Activity",
@@ -190,7 +197,7 @@ export default function Sidebar({
   ];
 
   const getColorClasses = (
-    color: "orange" | "pink" | "rose" | "purple" | "amber" | "green" | "fuchsia" | "indigo" | "red" | "yellow" | "cyan" | "violet" | "slate",
+    color: "orange" | "pink" | "rose" | "purple" | "amber" | "green" | "fuchsia" | "indigo" | "red" | "yellow" | "cyan" | "violet" | "slate" | "blue",
     isActive: boolean
   ): string => {
     const colors: Record<string, string> = {
@@ -205,15 +212,20 @@ export default function Sidebar({
       red: isActive ? "bg-red-500 text-white" : "bg-red-50 text-red-600",
       yellow: isActive ? "bg-yellow-500 text-white" : "bg-yellow-50 text-yellow-600",
       cyan: isActive ? "bg-cyan-500 text-white" : "bg-cyan-50 text-cyan-600",
+      blue: isActive ? "bg-blue-500 text-white" : "bg-blue-50 text-blue-600",
       violet: isActive ? "bg-violet-500 text-white" : "bg-violet-50 text-violet-600",
       slate: isActive ? "bg-slate-500 text-white" : "bg-slate-50 text-slate-600",
     };
     return colors[color] || colors.orange;
   };
 
-  const filteredMenu = menuList.filter((m) =>
-    user?.role ? PERMISSIONS[user.role]?.includes(m.module) : false
-  );
+  const filteredMenu = menuList.filter((m) => {
+    const hasPermission = user?.role ? PERMISSIONS[user.role]?.includes(m.module) : false;
+    // For TinySteps, some modules are completely disabled via feature flags.
+    // If it's a completely new module or simplified one (like dashboard), 
+    // it needs both permission and feature flag true.
+    return hasPermission && isModuleEnabled(m.module);
+  });
 
   return (
     <aside
