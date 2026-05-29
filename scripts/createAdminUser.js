@@ -41,9 +41,9 @@ async function createAdminUser() {
         await mongoose.connect(MONGO_URI);
         console.log("✅ Connected to MongoDB successfully!");
 
-        const email = "harshladukar@gmail.com";
+        const email = "admin@gmail.com";
         const plainPassword = "admin123";
-        const name = "Harsh Ladukar";
+        const name = "admin";
 
         // Check if user already exists
         const existingUser = await User.findOne({ email });
@@ -60,7 +60,7 @@ async function createAdminUser() {
         }
 
         // Hash the password
-        console.log("Hashing password...");
+        console.log("password...");
         const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
         // Create new admin user

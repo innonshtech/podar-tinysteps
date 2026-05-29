@@ -7,9 +7,24 @@ const CommunicationLogSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    recipients: {
-      type: [String], // Array of email addresses or user roles
+    from: {
+      type: String,
+      default: "",
+    },
+    recipientType: {
+      type: String,
+      enum: ["single", "teachers", "parents", "all_teachers", "all_parents", "mixed"],
+      default: "single",
+    },
+    // Actual email addresses the mail was dispatched to
+    recipientEmails: {
+      type: [String],
       required: true,
+    },
+    // Human-readable labels (names) for display in the history panel
+    recipientLabels: {
+      type: [String],
+      default: [],
     },
     subject: {
       type: String,
@@ -21,19 +36,29 @@ const CommunicationLogSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Sent", "Failed", "Pending"],
+      enum: ["Sent", "Partial", "Failed", "Pending"],
       default: "Pending",
+    },
+    sentCount: {
+      type: Number,
+      default: 0,
+    },
+    failedCount: {
+      type: Number,
+      default: 0,
     },
     attachments: [
       {
         filename: String,
-        url: String, // URL to cloud storage (e.g. Cloudinary)
-      }
+        url: String,
+      },
     ],
   },
   { timestamps: true }
 );
 
-const CommunicationLog = mongoose.models.CommunicationLog || mongoose.model("CommunicationLog", CommunicationLogSchema);
+const CommunicationLog =
+  mongoose.models.CommunicationLog ||
+  mongoose.model("CommunicationLog", CommunicationLogSchema);
 
 export default CommunicationLog;

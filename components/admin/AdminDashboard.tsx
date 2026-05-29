@@ -4,6 +4,7 @@ import Card from "@/components/common/Card";
 import Breadcrumbs from "@/components/common/Breadcrumbs";
 import Badge from "@/components/common/Badge";
 import Link from "next/link";
+import { isModuleEnabled } from "@/utils/featureFlags";
 import {
   Users,
   GraduationCap,
@@ -16,7 +17,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Plus,
-  ArrowRight
+  ArrowRight,
+  Mail
 } from "lucide-react";
 
 interface DashboardStats {
@@ -27,6 +29,7 @@ interface DashboardStats {
   pendingAdmissions: number;
   totalAttendance: number;
   totalFees: number;
+  totalCommunications: number;
 }
 
 export default function AdminDashboard() {
@@ -38,6 +41,7 @@ export default function AdminDashboard() {
     pendingAdmissions: 0,
     totalAttendance: 0,
     totalFees: 0,
+    totalCommunications: 0,
   });
 
   const [loading, setLoading] = useState(true);
@@ -56,13 +60,14 @@ export default function AdminDashboard() {
         // Debug: Log data flow 시작
         console.log("📊 Dashboard: Starting data fetch...");
 
-        const [studentsRes, teachersRes, classesRes, feeSummaryRes, attendanceRes, admissionsRes] = await Promise.all([
+        const [studentsRes, teachersRes, classesRes, feeSummaryRes, attendanceRes, admissionsRes, communicationsRes] = await Promise.all([
           fetch("/api/students?limit=500"),
           fetch("/api/teachers"),
           fetch("/api/classes"),
           fetch("/api/fees/summary"),
           fetch(`/api/attendance?startDate=${startOfMonth}&endDate=${today}&limit=1`),
           fetch("/api/admission/list"),
+          fetch("/api/communications/logs?limit=1"),
         ]);
 
         const students = await studentsRes.json();
@@ -71,6 +76,7 @@ export default function AdminDashboard() {
         const feeSummary = await feeSummaryRes.json();
         const attendance = await attendanceRes.json();
         const admissionsList = await admissionsRes.json();
+        const communications = await communicationsRes.json();
 
         // Debug: Log Admissions API response
         console.log("🎟️ Admissions API Response:", admissionsList);
@@ -99,6 +105,7 @@ export default function AdminDashboard() {
           pendingAdmissions: pendingCount,
           totalAttendance: attendance?.pagination?.total ?? 0,
           totalFees: feeSummary?.totalCollected ?? 0,
+          totalCommunications: communications?.pagination?.total ?? 0,
         });
 
       } catch (err: any) {
@@ -120,7 +127,7 @@ export default function AdminDashboard() {
       bgColor: "bg-pink-50",
       iconBg: "bg-pink-500",
       textColor: "text-pink-700",
-      href: "/students",
+      href: "/dashboard/students",
       description: "Total enrolled students",
     },
     {
@@ -130,7 +137,7 @@ export default function AdminDashboard() {
       bgColor: "bg-purple-50",
       iconBg: "bg-purple-500",
       textColor: "text-purple-700",
-      href: "/teachers",
+      href: "/dashboard/teachers",
       description: "Teaching staff members",
     },
     {
@@ -140,21 +147,21 @@ export default function AdminDashboard() {
       bgColor: "bg-orange-50",
       iconBg: "bg-orange-500",
       textColor: "text-orange-700",
-      href: "/classes",
+      href: "/dashboard/classes",
       description: "Total classes",
     },
-    {
+    ...(isModuleEnabled("admissions") ? [{
       title: "Admissions",
       icon: FileText,
       count: stats.pendingAdmissions,
       bgColor: "bg-green-50",
       iconBg: "bg-green-500",
       textColor: "text-green-700",
-      href: "/admission",
+      href: "/dashboard/admission",
       description: stats.pendingAdmissions > 0
         ? `${stats.pendingAdmissions} pending review`
         : "No pending applications",
-    },
+    }] : []),
     {
       title: "Attendance",
       icon: ClipboardCheck,
@@ -162,7 +169,7 @@ export default function AdminDashboard() {
       bgColor: "bg-cyan-50",
       iconBg: "bg-cyan-500",
       textColor: "text-cyan-700",
-      href: "/attendance",
+      href: "/dashboard/attendance",
       description: "Records this month",
     },
     {
@@ -172,9 +179,19 @@ export default function AdminDashboard() {
       bgColor: "bg-emerald-50",
       iconBg: "bg-emerald-500",
       textColor: "text-emerald-700",
-      href: "/fees",
+      href: "/dashboard/fees",
       description: "Revenue this year",
     },
+    ...(isModuleEnabled("communications") ? [{
+      title: "Communications",
+      icon: Mail,
+      count: stats.totalCommunications,
+      bgColor: "bg-blue-50",
+      iconBg: "bg-blue-500",
+      textColor: "text-blue-700",
+      href: "/dashboard/communications",
+      description: "Total emails sent",
+    }] : []),
   ];
 
   return (
@@ -248,39 +265,41 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className={`grid grid-cols-1 ${isModuleEnabled("admissions") ? "lg:grid-cols-2" : ""} gap-6 mb-8`}>
         {/* Pending Admissions */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-5 h-5 text-amber-600" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-800">Pending Admissions</h2>
-          </div>
-
-          <div className="space-y-3">
-            {stats.pendingAdmissions > 0 ? (
-              <>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-bold text-amber-600">{stats.pendingAdmissions}</p>
-                  <p className="text-gray-600 text-sm">applications</p>
-                </div>
-                <p className="text-gray-600 text-sm">Awaiting your review and approval</p>
-                <Link href="/admission">
-                  <button className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white rounded-lg font-medium transition-all">
-                    Review Applications
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </Link>
-              </>
-            ) : (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle2 className="w-5 h-5" />
-                <p className="font-medium">All applications reviewed</p>
+        {isModuleEnabled("admissions") && (
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
               </div>
-            )}
+              <h2 className="text-lg font-semibold text-gray-800">Pending Admissions</h2>
+            </div>
+
+            <div className="space-y-3">
+              {stats.pendingAdmissions > 0 ? (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-4xl font-bold text-amber-600">{stats.pendingAdmissions}</p>
+                    <p className="text-gray-600 text-sm">applications</p>
+                  </div>
+                  <p className="text-gray-600 text-sm">Awaiting your review and approval</p>
+                  <Link href="/dashboard/admission">
+                    <button className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white rounded-lg font-medium transition-all">
+                      Review Applications
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </Link>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <p className="font-medium">All applications reviewed</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Quick Actions */}
         <div className="bg-white border border-gray-200 rounded-xl p-6">

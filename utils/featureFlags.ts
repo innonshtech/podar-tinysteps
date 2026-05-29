@@ -8,9 +8,10 @@ export const FEATURE_FLAGS = {
   enquiries: true,
 
   // Feature Flagged (Disabled) Modules
-  classes: false,
-  students: false,
-  teachers: false,
+  admissions: false,
+  classes: true,
+  students: true,
+  teachers: true,
   timetable: false,
   exams: false,
   leaves: false,

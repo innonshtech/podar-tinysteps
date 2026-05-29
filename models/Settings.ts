@@ -54,6 +54,16 @@ const SettingsSchema = new mongoose.Schema(
       enableSmsNotifications: { type: Boolean, default: true },
       enablePushNotifications: { type: Boolean, default: true },
     },
+    // School bank details for fee payment sharing
+    bankDetails: {
+      accountName: { type: String, default: "" },
+      accountNumber: { type: String, default: "" },
+      ifscCode: { type: String, default: "" },
+      bankName: { type: String, default: "" },
+      branchName: { type: String, default: "" },
+      upiId: { type: String, default: "" },
+      upiName: { type: String, default: "" },
+    },
   },
   { timestamps: true }
 );
