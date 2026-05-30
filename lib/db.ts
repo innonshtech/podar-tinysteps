@@ -6,6 +6,8 @@ if (!cached) {
   cached = (global as any).mongoose = { conn: null, promise: null };
 }
 
+import { verifySmtpConnection } from "./mailer";
+
 import User from "@/models/User";
 import Student from "@/models/Student";
 import Teacher from "@/models/Teacher";
@@ -30,6 +32,12 @@ export async function connectDB() {
       User; Student; Teacher; Class; FeeStructure; FeeTransaction; LogActivity;
       return mongoose;
     });
+    
+    // Verify SMTP connection exactly once per startup
+    if (!(global as any).smtpVerified) {
+      (global as any).smtpVerified = true;
+      verifySmtpConnection();
+    }
   }
 
   cached.conn = await cached.promise;

@@ -3,6 +3,9 @@ import { connectDB } from "@/lib/db";
 import Event from "@/models/Event";
 import { verifyToken } from "@/lib/auth";
 import { logAdminActivity } from "@/lib/logAdminActivity";
+import Teacher from "@/models/Teacher";
+import Student from "@/models/Student";
+import { sendEmail } from "@/lib/mailer";
 
 export async function GET(req: Request) {
   try {
@@ -61,7 +64,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, description, eventType, startDate, endDate, location, image, targetAudience, classIds, status, notify } = body;
+    const { title, description, eventType, startDate, endDate, location, image, targetAudience, classIds, status, notify, notificationType } = body;
 
     if (!title || !startDate) {
       return NextResponse.json(
@@ -86,6 +89,67 @@ export async function POST(req: Request) {
 
     await event.save();
     await event.populate("classIds", "name section");
+
+    // --- Send Email Notification ---
+    if (notify && ["email", "all"].includes(notificationType)) {
+      let recipientEmails: string[] = [];
+
+      if (targetAudience === "teachers" || targetAudience === "staff") {
+        const teachers = await Teacher.find({}, { email: 1 }).lean();
+        recipientEmails = teachers.map((t: any) => t.email).filter(Boolean);
+      } else if (targetAudience === "parents" || targetAudience === "students" || targetAudience === "all") {
+        // Find parents
+        const studentQuery: any = { "parents.0": { $exists: true } };
+        if (classIds && classIds.length > 0) {
+          studentQuery.classId = { $in: classIds };
+        }
+        const students = await Student.find(studentQuery, { parents: 1 }).lean();
+        const seen = new Set<string>();
+        for (const student of students) {
+          if (!student.parents) continue;
+          for (const parent of student.parents as any[]) {
+            const email: string = parent.email?.trim();
+            if (email && !seen.has(email)) {
+              seen.add(email);
+              recipientEmails.push(email);
+            }
+          }
+        }
+        
+        // If targetAudience === "all", also add teachers
+        if (targetAudience === "all") {
+          const teachers = await Teacher.find({}, { email: 1 }).lean();
+          teachers.forEach((t: any) => {
+            if (t.email && !seen.has(t.email)) {
+              seen.add(t.email);
+              recipientEmails.push(t.email);
+            }
+          });
+        }
+      }
+
+      if (recipientEmails.length > 0) {
+        const emailSubject = `New School Event: ${title}`;
+        const emailBody = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4F46E5;">${title}</h2>
+            <p><strong>Date:</strong> ${new Date(startDate).toLocaleDateString()}</p>
+            ${location ? `<p><strong>Location:</strong> ${location}</p>` : ""}
+            <div style="margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px;">
+              ${description || "No additional details provided."}
+            </div>
+          </div>
+        `;
+        
+        // Fire and forget (don't block the API response if email is slow)
+        sendEmail({
+          to: recipientEmails,
+          subject: emailSubject,
+          html: emailBody,
+        }).catch(err => console.error("Failed to send event emails:", err));
+      }
+    }
+    // -------------------------------
 
     // Log activity only for admin
     if (user.role === "admin") {

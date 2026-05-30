@@ -1,12 +1,11 @@
 "use client";
 import React, { useState } from "react";
 import StudentFeeManagement from "@/components/admin/StudentFeeManagement";
-import FeeManagement from "@/components/admin/FeeManagement"; // Fee Structure Management
-import FeeHeadManagement from "@/components/admin/FeeHeadManagement";
-import { DollarSign, Layers, Receipt } from "lucide-react";
+import FeeCategoryManagement from "@/components/admin/FeeCategoryManagement";
+import { DollarSign, Layers } from "lucide-react";
 
 export default function DashboardFeesPage() {
-  const [activeTab, setActiveTab] = useState<"collections" | "structures" | "heads">("collections");
+  const [activeTab, setActiveTab] = useState<"collections" | "categories">("collections");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -25,25 +24,14 @@ export default function DashboardFeesPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("structures")}
-            className={`flex items-center gap-2 pb-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "structures"
+            onClick={() => setActiveTab("categories")}
+            className={`flex items-center gap-2 pb-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "categories"
                 ? "border-emerald-500 text-emerald-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
           >
             <Layers className="w-4 h-4" />
-            Fee Structures
-          </button>
-
-          <button
-            onClick={() => setActiveTab("heads")}
-            className={`flex items-center gap-2 pb-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "heads"
-                ? "border-purple-500 text-purple-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-          >
-            <Receipt className="w-4 h-4" />
-            Fee Heads (Master)
+            Fee Categories
           </button>
         </div>
       </div>
@@ -51,8 +39,7 @@ export default function DashboardFeesPage() {
       {/* Tab Content */}
       <div className="p-0">
         {activeTab === "collections" && <StudentFeeManagement />}
-        {activeTab === "structures" && <FeeManagement />}
-        {activeTab === "heads" && <FeeHeadManagement />}
+        {activeTab === "categories" && <FeeCategoryManagement />}
       </div>
     </div>
   );
