@@ -27,6 +27,9 @@ import {
   AlertCircle,
   X,
   Eye,
+  EyeOff,
+  FileText,
+  Info,
 } from "lucide-react";
 
 interface Parent {
@@ -87,6 +90,10 @@ export default function StudentManagement() {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
+
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // --- Fee assignment at enrollment ---
   interface FeeStructureForClass {
@@ -675,9 +682,13 @@ export default function StudentManagement() {
             actions={(row) => (
               <div className="flex gap-2">
                 <button
-                  onClick={() => router.push(`/dashboard/fees/${(row as Student)._id}`)}
+                  onClick={() => {
+                    setViewingStudent(row as Student);
+                    setShowPassword(false);
+                    setDetailsModalOpen(true);
+                  }}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-sm font-medium"
-                  title="View Fee Details"
+                  title="View Details"
                 >
                   <Eye className="w-3.5 h-3.5" />
                   Details
@@ -1134,6 +1145,151 @@ export default function StudentManagement() {
             </div>
           </div>
         </div>
+      </Modal>
+
+      {/* Details Modal */}
+      <Modal
+        isOpen={detailsModalOpen}
+        onClose={() => {
+          setDetailsModalOpen(false);
+          setViewingStudent(null);
+        }}
+        title="Student Details"
+        size="lg"
+        footer={
+          <div className="flex justify-end w-full">
+            <Button onClick={() => setDetailsModalOpen(false)} variant="secondary">
+              Close
+            </Button>
+          </div>
+        }
+      >
+        {viewingStudent && (
+          <div className="space-y-6 mt-4">
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full flex items-center justify-center">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  {viewingStudent.firstName} {viewingStudent.lastName}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Admission No: <span className="font-medium text-gray-700">{viewingStudent.admissionNo || "N/A"}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-blue-500" />
+                  Basic Info
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-3">
+                  <div>
+                    <span className="text-xs text-gray-500 block">Date of Birth</span>
+                    <span className="text-sm font-medium text-gray-800">
+                      {viewingStudent.dob ? new Date(viewingStudent.dob).toLocaleDateString() : "N/A"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 block">Admission Date</span>
+                    <span className="text-sm font-medium text-gray-800">
+                      {viewingStudent.admissionDate ? new Date(viewingStudent.admissionDate).toLocaleDateString() : "N/A"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 block">Gender</span>
+                    <span className="text-sm font-medium text-gray-800 capitalize">
+                      {viewingStudent.gender || "N/A"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 block">Class & Section</span>
+                    <span className="text-sm font-medium text-gray-800">
+                      {(() => {
+                        if (typeof viewingStudent.classId === "object") {
+                          return `${(viewingStudent.classId as any)?.name || ""} - ${(viewingStudent.classId as any)?.section || ""}`;
+                        }
+                        const foundClass = classes.find(c => c._id === viewingStudent.classId);
+                        return foundClass ? `${foundClass.name} - ${foundClass.section}` : viewingStudent.classId || "N/A";
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-green-500" />
+                  Parent/Guardian Info
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-3">
+                  {viewingStudent.parents && viewingStudent.parents.length > 0 ? (
+                    viewingStudent.parents.map((parent: any, idx: number) => (
+                      <div key={idx} className={idx > 0 ? "pt-3 border-t border-gray-200" : ""}>
+                        <div>
+                          <span className="text-xs text-gray-500 block">Name ({parent.relation || "Parent"})</span>
+                          <span className="text-sm font-medium text-gray-800">{parent.name || "N/A"}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-500">No parent info available</span>
+                  )}
+                  
+                  <div className="pt-3 border-t border-gray-200">
+                    <span className="text-xs text-gray-500 block">Login Email</span>
+                    <span className="text-sm font-medium text-gray-800">{viewingStudent.email || "N/A"}</span>
+                  </div>
+                  
+                  <div>
+                    <span className="text-xs text-gray-500 block">Login Password</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="password"
+                        value="********"
+                        readOnly
+                        className="text-sm font-medium text-gray-800 bg-transparent border-none p-0 focus:ring-0 w-full"
+                      />
+                    </div>
+                    <span className="text-[10px] text-gray-400 mt-1 block">Passwords are securely hashed and cannot be viewed.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-orange-500" />
+                Medical Information
+              </h3>
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-100 space-y-3">
+                <div>
+                  <span className="text-xs text-gray-500 block">Allergies</span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {viewingStudent.medical?.allergies && viewingStudent.medical.allergies.length > 0 ? (
+                      viewingStudent.medical.allergies.map((allergy: string, idx: number) => (
+                        <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                          {allergy}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-600">None</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 block">Medical Notes</span>
+                  <p className="text-sm text-gray-800 mt-1 whitespace-pre-wrap">
+                    {viewingStudent.medical?.notes || "No medical notes available."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Delete Confirmation Modal */}

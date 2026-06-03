@@ -31,6 +31,9 @@ import {
   Grid3x3,
   List,
   DoorOpen,
+  Eye,
+  EyeOff,
+  Info,
 } from "lucide-react";
 
 interface ClassAssignment {
@@ -73,6 +76,10 @@ export default function TeacherManagement() {
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingTeacher, setDeletingTeacher] = useState<Teacher | null>(null);
+
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [viewingTeacher, setViewingTeacher] = useState<Teacher | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
   const subjectDropdownRef = useRef<HTMLDivElement>(null);
@@ -579,6 +586,18 @@ export default function TeacherManagement() {
             actions={(row) => (
               <div className="flex gap-2">
                 <button
+                  onClick={() => {
+                    setViewingTeacher(row as Teacher);
+                    setShowPassword(false);
+                    setDetailsModalOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-sm font-medium"
+                  title="View Details"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Details
+                </button>
+                <button
                   onClick={() => handleEditTeacher(row as Teacher)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-sm font-medium"
                 >
@@ -822,6 +841,138 @@ export default function TeacherManagement() {
             </div>
           </div>
         </div>
+      </Modal>
+
+      {/* Details Modal */}
+      <Modal
+        isOpen={detailsModalOpen}
+        onClose={() => {
+          setDetailsModalOpen(false);
+          setViewingTeacher(null);
+        }}
+        title="Teacher Details"
+        size="lg"
+        footer={
+          <div className="flex justify-end w-full">
+            <Button onClick={() => setDetailsModalOpen(false)} variant="secondary">
+              Close
+            </Button>
+          </div>
+        }
+      >
+        {viewingTeacher && (
+          <div className="space-y-6 mt-4">
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-500 rounded-full flex items-center justify-center">
+                <GraduationCap className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  {viewingTeacher.name}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Email: <span className="font-medium text-gray-700">{viewingTeacher.email || "N/A"}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-purple-500" />
+                  Basic Info
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-3">
+                  <div>
+                    <span className="text-xs text-gray-500 block">Phone</span>
+                    <span className="text-sm font-medium text-gray-800">
+                      {viewingTeacher.phone || "N/A"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 block">Login Email</span>
+                    <span className="text-sm font-medium text-gray-800">{viewingTeacher.email || "N/A"}</span>
+                  </div>
+                  
+                  <div>
+                    <span className="text-xs text-gray-500 block">Login Password</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="password"
+                        value="********"
+                        readOnly
+                        className="text-sm font-medium text-gray-800 bg-transparent border-none p-0 focus:ring-0 w-full"
+                      />
+                    </div>
+                    <span className="text-[10px] text-gray-400 mt-1 block">Passwords are securely hashed and cannot be viewed.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-green-500" />
+                  Academics
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-3">
+                  <div>
+                    <span className="text-xs text-gray-500 block">Subjects</span>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {viewingTeacher.subjects && viewingTeacher.subjects.length > 0 ? (
+                        viewingTeacher.subjects.map((subject: string, idx: number) => (
+                          <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                            {subject}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-gray-600">No subjects</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 block">Qualifications</span>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {viewingTeacher.qualifications && viewingTeacher.qualifications.length > 0 ? (
+                        viewingTeacher.qualifications.map((qual: string, idx: number) => (
+                          <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            {qual}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-gray-600">None</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 block">Classes</span>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {viewingTeacher.classes && viewingTeacher.classes.length > 0 ? (
+                        viewingTeacher.classes.map((cls: any, idx: number) => {
+                          let name = cls.classId;
+                          if (typeof cls.classId === "object") {
+                            name = `${cls.classId.name || ""} - ${cls.classId.section || ""}`;
+                          } else {
+                            const foundClass = classes.find(c => c._id === cls.classId);
+                            if (foundClass) {
+                              name = `${foundClass.name} - ${foundClass.section}`;
+                            }
+                          }
+                          return (
+                            <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              {name}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-sm text-gray-600">No classes</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Delete Confirmation Modal */}

@@ -42,18 +42,21 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const token = req.cookies.get("token")?.value;
-    const user = verifyToken(token);
-
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    let user = null;
+    if (token) {
+      try {
+        user = verifyToken(token);
+      } catch (e) {
+        // Ignore invalid token for public POSTs
+      }
     }
 
     const body = await req.json();
 
     const newEnquiry = new Enquiry({
       ...body,
-      // Default to assigning to the creator if they are a teacher, or left empty if admin
-      assignedTo: body.assignedTo || (user.role === "teacher" ? user.id : undefined),
+      // Default to assigning to the creator if they are a teacher, or left empty if admin/public
+      assignedTo: body.assignedTo || (user?.role === "teacher" ? user.id : undefined),
     });
 
     await newEnquiry.save();
